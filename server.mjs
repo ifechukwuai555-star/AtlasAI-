@@ -1,0 +1,11 @@
+import express from "express";
+import dotenv from "dotenv";
+import OpenAI from "openai";
+dotenv.config();
+const app=express();
+const port=process.env.PORT||3000;
+app.use(express.json({limit:"50kb"}));
+app.use(express.static("."));
+const client=new OpenAI({apiKey:process.env.OPENAI_API_KEY});
+app.post("/api/ask",async(req,res)=>{try{const question=String(req.body?.question||"").trim();if(!question)return res.status(400).json({error:"Please enter a question."});if(question.length>4000)return res.status(400).json({error:"Question is too long."});const response=await client.responses.create({model:process.env.OPENAI_MODEL||"gpt-5",instructions:"You are AtlasAI, a helpful, clear and friendly general-purpose assistant. Give accurate, age-appropriate answers. Be honest when uncertain.",input:question,store:false});res.json({answer:response.output_text||"I couldn't generate an answer."});}catch(error){console.error("AtlasAI error:",error?.message);res.status(500).json({error:"AtlasAI is temporarily unavailable. Please try again."});}});
+app.listen(port,()=>console.log(`AtlasAI running on port ${port}`));
